@@ -1,103 +1,185 @@
-# ☁️ Cloud Storage Data Redundancy Removal
+# 🐞 Serverless Bug Tracker Application
 
-## 📌 Abstract
+A **full-stack, serverless web application** for tracking and managing software bugs.  
+Built with **React**, **AWS Lambda**, and **DynamoDB**, it’s scalable, cost-efficient, and easy to deploy.
 
-This project demonstrates a **Data Deduplication System** for cloud storage using **AWS S3 and Python (Boto3)**. It scans files stored in an S3 bucket, computes their **hash values (MD5)**, identifies duplicate files, and moves duplicates into a dedicated `duplicates/` folder. This reduces **storage cost** and ensures **efficient data management** in cloud environments.
+<img width="1861" height="853" alt="image" src="https://github.com/user-attachments/assets/cd744524-d23f-4255-9610-e684da7d1970" />
+
+## 🚀 Features
+
+- **Create Bugs** – Submit new bugs with a title and description.  
+- **View Bugs** – See a real-time list of all submitted bugs.  
+- **Update Status** – Change the status of any bug (Open, In Progress, Resolved).  
+- **Email Notifications** – Automatically sends an email via Amazon SES when a new bug is submitted.  
 
 ---
 
-## 🎯 Purpose of Work
+## 🧩 Architecture Overview
 
-* To minimize cloud storage usage by detecting and handling duplicate files.
-* To demonstrate practical **cloud computing concepts** using AWS services.
-* To automate redundancy removal with a simple Python script.
+This project follows a **serverless architecture** using AWS services.
+
+### Data Flow
+
+1. **Frontend:**  
+   Users interact with the React app hosted on **Amazon S3** (static website hosting).  
+2. **API Layer:**  
+   React (via `axios`) sends HTTP requests to **Amazon API Gateway**.  
+3. **Compute:**  
+   API Gateway triggers an **AWS Lambda function** (`BugTrackerHandler`) through **Lambda Proxy Integration**.  
+4. **Business Logic:**  
+   The Lambda function (Node.js 20.x) handles CRUD operations, generates UUIDs, and manages bug data.  
+5. **Database:**  
+   Lambda reads/writes bug data in a **DynamoDB** table (`BugsTable`).  
+6. **Notifications (Optional):**  
+   On new bug creation, Lambda sends an email notification via **Amazon SES**.  
+7. **Response:**  
+   Data flows back: DynamoDB → Lambda → API Gateway → React App → UI Update.  
 
 ---
 
-## 🏗️ System Architecture
+## 🧠 Technology Stack
 
-```plaintext
-+------------+          +------------+          +----------------+
-|   Client   |  --->    |   AWS S3   |  --->    | Deduplication  |
-|  (Python)  |          |   Bucket   |          |   Script       |
-+------------+          +------------+          +----------------+
-                               |
-                               v
-                        +---------------+
-                        | Duplicates/   |
-                        | (Moved Files) |
-                        +---------------+
+### Frontend
+- ⚛️ React 18  
+- 🌐 axios (for API requests)  
+- 🎨 HTML5, CSS3 (modern dark theme)
+
+### Backend (Serverless)
+- 🧭 **API:** Amazon API Gateway (REST API)  
+- ⚙️ **Compute:** AWS Lambda (Node.js 20.x)  
+- 🗄️ **Database:** Amazon DynamoDB (Single Table)  
+- ✉️ **Notifications:** Amazon SES (Simple Email Service)  
+- ☁️ **Hosting:** Amazon S3 (Static Website Hosting)  
+- 🔒 **IAM:** AWS Identity and Access Management  
+
+---
+
+## 🛠️ Deployment Guide
+
+### Part 1: Backend Setup (AWS)
+
+#### 🗄️ DynamoDB
+1. Create a new table, e.g., **`BugsTable`**  
+2. Partition key: `id` (String)  
+3. Keep all other defaults  
+
+#### ⚙️ Lambda Function
+1. Create function **`BugTrackerHandler`** (Runtime: Node.js 20.x).  
+2. **Add a Layer for `uuid`:**
+   ```bash
+   mkdir nodejs && cd nodejs
+   npm init -y
+   npm install uuid
+   zip -r layer.zip nodejs
+   ````
+
+Upload `layer.zip` as a new Lambda Layer and attach it.
+3. Paste your Lambda code (`index.mjs`) into the code editor.
+
+#### 🔑 IAM Permissions
+
+Attach the following policies to the Lambda execution role:
+
+* `AmazonDynamoDBFullAccess`
+* `AmazonSESFullAccess`
+
+(Or limit to specific permissions like `PutItem`, `Scan`, `UpdateItem`, `SendEmail`.)
+
+#### 🌐 API Gateway
+
+1. Create a new **REST API**.
+2. Create resource: `/bugs`
+
+   * **GET** → Lambda Proxy Integration
+   * **POST** → Lambda Proxy Integration
+3. Create a child resource: `/bugs/{id}`
+
+   * **PUT** → Lambda Proxy Integration
+4. Enable **CORS** for `/bugs` and `/bugs/{id}`
+5. Deploy the API to a new stage (e.g., `prod` or `stage1`).
+6. Copy the **Invoke URL**.
+
+#### ✉️ Amazon SES (Optional)
+
+1. Verify sender and recipient emails under **Verified Identities**.
+2. Sandbox accounts require both addresses to be verified.
+
+---
+
+### Part 2: Frontend Deployment
+
+#### ⚙️ Configure React App
+
+1. Open `App.jsx`.
+2. Set the API URL:
+
+   ```js
+   const API_URL = "https://your-api-gateway-url.amazonaws.com/prod";
+   ```
+
+#### 🧱 Build the App
+
+```bash
+npm install
+npm run build
+```
+
+This creates a `/build` (or `/dist`) folder.
+
+#### ☁️ Host on Amazon S3
+
+1. Create a bucket (e.g., `bug-tracker-ui`).
+2. **Permissions:**
+
+   * Uncheck **Block all public access**
+   * Add this **Bucket Policy**:
+
+     ```json
+     {
+       "Version": "2012-10-17",
+       "Statement": [
+         {
+           "Sid": "PublicReadGetObject",
+           "Effect": "Allow",
+           "Principal": "*",
+           "Action": "s3:GetObject",
+           "Resource": "arn:aws:s3:::YOUR_BUCKET_NAME/*"
+         }
+       ]
+     }
+     ```
+3. **Static Website Hosting:**
+
+   * Enable it in the **Properties** tab.
+   * Set `index.html` as the Index document.
+4. Upload the build files (`index.html`, `assets/`, `static/`) to the bucket root.
+5. Use your **S3 Website Endpoint** to access the live app.
+
+---
+
+## 🔗 API Endpoints
+
+**Base URL:** `https://your-api-gateway-url.amazonaws.com/prod`
+
+| Method | Endpoint     | Body (JSON)                                      | Description             |
+| ------ | ------------ | ------------------------------------------------ | ----------------------- |
+| POST   | `/bugs`      | `{ "title": "Bug Title", "description": "..." }` | Creates a new bug.      |
+| GET    | `/bugs`      | None                                             | Retrieves all bugs.     |
+| PUT    | `/bugs/{id}` | `{ "status": "In Progress" }`                    | Updates a bug’s status. |
+
+---
+
+## 📬 Example Email Notification (Optional)
+
+When a new bug is created, Amazon SES sends a notification email:
+
+```
+Subject: 🐞 New Bug Submitted
+Body: A new bug titled "Login Button Not Working" has been added to the tracker.
 ```
 
 ---
 
-## ⚙️ Hardware & Software Requirements
+## 📸 Live Demo (Optional)
 
-**Hardware**
-
-* Any laptop/desktop with internet access
-
-**Software**
-
-* Python 3.x
-* AWS CLI
-* Boto3 library (`pip install boto3`)
-* AWS Free Tier account
-* S3 bucket
-
----
-
-## 🛠️ Working Steps
-
-1. **Create an AWS S3 bucket** (e.g., `cloud-dedupe-project`).
-2. **Upload files** (including duplicates) into the bucket.
-3. **Run Python script** (`dedupe.py`):
-
-   * Computes hash of each file.
-   * Identifies duplicates.
-   * Moves duplicates into `/duplicates/` folder.
-4. **Check results** in AWS S3 Console.
-
----
-
-## 🖼️ Screenshots
-
-### ✅ Before Running Script
-
-<img width="1914" height="805" alt="Screenshot 2025-09-09 104028" src="https://github.com/user-attachments/assets/5f5cb279-cbad-4e4c-b35c-36ea757e9ce5" />
-
-
-### ✅ After Running Script
-
-
-<img width="1561" height="632" alt="Screenshot 2025-09-09 104127" src="https://github.com/user-attachments/assets/0cd72a4c-8797-4b60-9e07-8ae920ea6f4f" />
-<img width="1529" height="511" alt="Screenshot 2025-09-09 104138" src="https://github.com/user-attachments/assets/3a074db2-f96c-4fbd-a132-caac6c9fbc0d" />
-
----
-
-## 🧑‍💻 Technology Used
-
-* **AWS S3 (Storage)**
-* **Python (Boto3 SDK)**
-* **Hashing (MD5)**
-
----
-
-## ✅ Conclusion
-
-The project successfully demonstrates how to **identify and remove redundant data** in cloud storage using a simple Python script and AWS S3. This technique optimizes storage utilization, reduces costs, and can be extended for large-scale enterprise systems.
-
----
-
-## 🔗 References
-
-* [AWS S3 Documentation](https://docs.aws.amazon.com/s3/)
-* [Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
-* [AWS Free Tier](https://aws.amazon.com/free/)
-
----
-
-⚡ *This project runs fully on the AWS Free Tier and is safe for academic/learning purposes.*
-
-
-Do you also want me to prepare a **1-page project summary version** (like for your submission sheet) based on this README?
+👉 [http://bug-tracker-ui.s3-website.ap-south-1.amazonaws.com/](#)
