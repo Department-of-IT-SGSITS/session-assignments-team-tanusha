@@ -4,6 +4,8 @@ A **full-stack, serverless web application** for tracking and managing software 
 Built with **React**, **AWS Lambda**, and **DynamoDB**, it’s scalable, cost-efficient, and easy to deploy.
 
 <img width="1861" height="853" alt="image" src="https://github.com/user-attachments/assets/cd744524-d23f-4255-9610-e684da7d1970" />
+<img width="1855" height="858" alt="image" src="https://github.com/user-attachments/assets/7e40562e-9dbe-40cd-80cc-f7cc65d412a0" />
+
 
 ## 🚀 Features
 
@@ -41,7 +43,7 @@ This project follows a **serverless architecture** using AWS services.
 
 ### Frontend
 - ⚛️ React 18  
-- 🌐 axios (for API requests)  
+- 🌐 Axios (for API requests)  
 - 🎨 HTML5, CSS3 (modern dark theme)
 
 ### Backend (Serverless)
@@ -99,7 +101,7 @@ Attach the following policies to the Lambda execution role:
 5. Deploy the API to a new stage (e.g., `prod` or `stage1`).
 6. Copy the **Invoke URL**.
 
-#### ✉️ Amazon SES (Optional)
+#### ✉️ Amazon SES 
 
 1. Verify sender and recipient emails under **Verified Identities**.
 2. Sandbox accounts require both addresses to be verified.
@@ -169,8 +171,7 @@ This creates a `/build` (or `/dist`) folder.
 
 ---
 
-## 📬 Example Email Notification (Optional)
-
+## 📬 Example Email Notification 
 When a new bug is created, Amazon SES sends a notification email:
 
 ```
@@ -180,6 +181,9 @@ Body: A new bug titled "Login Button Not Working" has been added to the tracker.
 
 ---
 
-## 📸 Live Demo (Optional)
+## 📸 Live Demo 
 
-👉 [http://bug-tracker-ui.s3-website.ap-south-1.amazonaws.com/](#)
+http://bug-tracker-ui.s3-website.ap-south-1.amazonaws.com/
+
+
+
