@@ -102,7 +102,7 @@ Attach the following policies to the Lambda execution role:
 5. Deploy the API to a new stage (e.g., `prod` or `stage1`).
 6. Copy the **Invoke URL**.
 
-#### ✉️ Amazon SES (Optional)
+#### ✉️ Amazon SES 
 
 1. Verify sender and recipient emails under **Verified Identities**.
 2. Sandbox accounts require both addresses to be verified.
@@ -172,7 +172,7 @@ This creates a `/build` (or `/dist`) folder.
 
 ---
 
-## 📬 Example Email Notification (Optional)
+## 📬 Example Email Notification 
 
 When a new bug is created, Amazon SES sends a notification email:
 
